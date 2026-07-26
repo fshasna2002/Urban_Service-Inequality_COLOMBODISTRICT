@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Urban Service Inequality Web-Based Mapping System — Colombo District</title>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ===================== HEADER ===================== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 40 40" class="compass-svg">
+        <circle cx="20" cy="20" r="18" class="compass-ring"/>
+        <circle cx="20" cy="20" r="18" class="compass-ring compass-ring-spin"/>
+        <path d="M20 6 L23 20 L20 34 L17 20 Z" class="compass-needle"/>
+        <circle cx="20" cy="20" r="2.4" class="compass-core"/>
+      </svg>
+    </div>
+    <div class="brand-text">
+      <h1>Urban Service Inequality <span>Mapping System</span></h1>
+      <p class="subtitle">Colombo District &middot; Planning &amp; Public Participation Web GIS</p>
+    </div>
+  </div>
+
+  <div class="header-center">
+    <div class="theme-switcher" role="tablist" aria-label="Thematic layer switcher">
+      <button class="theme-btn active" data-theme="accessibility" role="tab" aria-selected="true">
+        Accessibility Index
+      </button>
+      <button class="theme-btn" data-theme="priority" role="tab" aria-selected="false">
+        Priority Areas
+      </button>
+    </div>
+  </div>
+
+  <div class="header-right">
+    <div class="search-box">
+      <input list="gn-list" id="gnSearchInput" placeholder="Search GN Division…" autocomplete="off">
+      <datalist id="gn-list"></datalist>
+      <button id="gnSearchBtn" title="Search">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path d="M21 21l-4.35-4.35M18 11a7 7 0 1 1-14 0 7 7 0 0 1 14 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <button id="mobileLeftToggle" class="icon-btn only-mobile" title="Toggle planning dashboard">☰</button>
+    <button id="mobileRightToggle" class="icon-btn only-mobile" title="Toggle feedback panel">💬</button>
+  </div>
+</header>
+
+<!-- ===================== MAIN LAYOUT ===================== -->
+<div class="app-body">
+
+  <!-- ---------- LEFT SIDEBAR: PLANNING DASHBOARD ---------- -->
+  <aside class="sidebar sidebar-left" id="sidebarLeft">
+    <div class="sidebar-scroll">
+
+      <section class="panel">
+        <h2 class="panel-title">Service Layers</h2>
+        <ul class="layer-list" id="layerList">
+          <li data-layer="hospitals">
+            <label>
+              <input type="checkbox" checked data-layer="hospitals">
+              <span class="swatch swatch-hospitals"></span>
+              Hospitals
+            </label>
+            <span class="layer-count" id="count-hospitals">0</span>
+          </li>
+          <li data-layer="schools">
+            <label>
+              <input type="checkbox" checked data-layer="schools">
+              <span class="swatch swatch-schools"></span>
+              Schools
+            </label>
+            <span class="layer-count" id="count-schools">0</span>
+          </li>
+          <li data-layer="banks">
+            <label>
+              <input type="checkbox" checked data-layer="banks">
+              <span class="swatch swatch-banks"></span>
+              Banks
+            </label>
+            <span class="layer-count" id="count-banks">0</span>
+          </li>
+          <li data-layer="parks">
+            <label>
+              <input type="checkbox" checked data-layer="parks">
+              <span class="swatch swatch-parks"></span>
+              Parks
+            </label>
+            <span class="layer-count" id="count-parks">0</span>
+          </li>
+          <li data-layer="busstops">
+            <label>
+              <input type="checkbox" checked data-layer="busstops">
+              <span class="swatch swatch-busstops"></span>
+              Bus Stops
+            </label>
+            <span class="layer-count" id="count-busstops">0</span>
+          </li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Legend</h2>
+        <div id="legendBox" class="legend-box"></div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Dashboard Statistics</h2>
+        <div class="stats-grid" id="statsGrid"></div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">GN Division Information</h2>
+        <div id="gnInfoPanel" class="gn-info-panel empty">
+          <p class="placeholder-text">Click a GN Division on the map to view its profile.</p>
+        </div>
+      </section>
+
+    </div>
+  </aside>
+
+  <!-- ---------- MAP ---------- -->
+  <main class="map-wrap">
+    <div id="map"></div>
+    <div id="pickLocationBanner" class="pick-banner hidden">
+      📍 Click anywhere on the map to set the feedback location
+      <button id="cancelPickBtn">Cancel</button>
+    </div>
+  </main>
+
+  <!-- ---------- RIGHT SIDEBAR: COMMUNITY FEEDBACK ---------- -->
+  <aside class="sidebar sidebar-right" id="sidebarRight">
+    <div class="sidebar-scroll">
+      <section class="panel">
+        <h2 class="panel-title">Community Feedback Dashboard</h2>
+        <p class="panel-desc">Report missing or inadequate urban services. Submissions are logged publicly on this map — please do not include your name or contact details.</p>
+
+        <form id="feedbackForm" class="feedback-form">
+          <label class="field-label" for="fGn">GN Division</label>
+          <input type="text" id="fGn" name="gn" list="gn-list" placeholder="e.g. Dehiwala" required>
+
+          <label class="field-label" for="fService">Service Type</label>
+          <select id="fService" name="service" required>
+            <option value="" disabled selected>Select service…</option>
+            <option value="Hospital">Hospital</option>
+            <option value="School">School</option>
+            <option value="Bank">Bank</option>
+            <option value="Park">Park</option>
+            <option value="Bus Stop">Bus Stop</option>
+          </select>
+
+          <label class="field-label" for="fIssue">Issue Category</label>
+          <select id="fIssue" name="issue" required>
+            <option value="" disabled selected>Select issue…</option>
+            <option value="Long Travel Distance">Long Travel Distance</option>
+            <option value="No Access Road">No Access Road</option>
+            <option value="Overcrowding">Overcrowding</option>
+            <option value="Poor Facility Condition">Poor Facility Condition</option>
+            <option value="Safty Concern">Safty Concern</option>
+            <option value="Other">Other</option>
+          </select>
+
+          <label class="field-label" for="fDesc">Describe the Issue</label>
+          <textarea id="fDesc" name="description" rows="3" placeholder="Briefly describe the problem…" required></textarea>
+
+          <label class="field-label">Location</label>
+          <div class="location-row">
+            <input type="text" id="fLocation" name="location" placeholder="6.85123,79.86542" readonly required>
+            <button type="button" id="pickLocationBtn">📍 Select Location</button>
+          </div>
+
+          <button type="submit" class="submit-btn" id="submitFeedbackBtn">Submit Feedback</button>
+          <div id="formMsg" class="form-msg"></div>
+        </form>
+      </section>
+
+      <section class="panel feedback-list-panel">
+        <div class="panel-title-row">
+          <h2 class="panel-title">Recent Submitted Feedback</h2>
+          <button id="refreshFeedbackBtn" class="refresh-btn" title="Refresh feedback">⟳</button>
+        </div>
+        <p class="auto-refresh-note">Auto-refreshes every 30s</p>
+        <div class="feedback-tabs" id="feedbackTabs">
+          <button class="feedback-tab active" data-service="all">All</button>
+          <button class="feedback-tab" data-service="Hospital">Hospitals</button>
+          <button class="feedback-tab" data-service="School">Schools</button>
+          <button class="feedback-tab" data-service="Bank">Banks</button>
+          <button class="feedback-tab" data-service="Park">Parks</button>
+          <button class="feedback-tab" data-service="Bus Stop">Bus Stops</button>
+        </div>
+        <div id="feedbackCards" class="feedback-cards"></div>
+      </section>
+    </div>
+  </aside>
+
+</div>
+
+<!-- ===================== SCRIPTS ===================== -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="config.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
