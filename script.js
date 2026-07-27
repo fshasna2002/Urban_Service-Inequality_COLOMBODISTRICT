@@ -714,6 +714,37 @@
   // -------------------------------------------------------------
   const refreshBtn = document.getElementById("refreshFeedbackBtn");
 
+  // ADDED: loads data via a <script> tag (JSONP) instead of fetch().
+  // <script> tags are never subject to CORS, which reliably sidesteps a
+  // known Google Apps Script quirk where the script.google.com/exec
+  // redirect can omit the Access-Control-Allow-Origin header that
+  // fetch() cross-origin requests strictly require (this can happen
+  // even on a correctly configured "Anyone" access deployment).
+  function jsonpRequest(url) {
+    return new Promise((resolve, reject) => {
+      const callbackName = `feedbackJsonp_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
+      const script = document.createElement("script");
+
+      const cleanup = () => {
+        delete window[callbackName];
+        script.remove();
+      };
+
+      window[callbackName] = (data) => {
+        cleanup();
+        resolve(data);
+      };
+      script.onerror = () => {
+        cleanup();
+        reject(new Error("JSONP script failed to load."));
+      };
+
+      const separator = url.includes("?") ? "&" : "?";
+      script.src = `${url}${separator}callback=${callbackName}`;
+      document.head.appendChild(script);
+    });
+  }
+
   function fetchFeedback() {
     if (!CONFIG.APPS_SCRIPT_API_URL || CONFIG.APPS_SCRIPT_API_URL.startsWith("PASTE_")) {
       // No live backend configured yet — keep whatever is in memory
@@ -721,8 +752,7 @@
       return;
     }
     refreshBtn.classList.add("spinning");
-    fetch(CONFIG.APPS_SCRIPT_API_URL)
-      .then(r => r.json())
+    jsonpRequest(CONFIG.APPS_SCRIPT_API_URL)
       .then(rows => {
         // Expecting an array of objects with keys matching the Sheet's
         // columns — see APPS_SCRIPT_SETUP.md for the exact shape.
@@ -739,7 +769,8 @@
         feedbackData = remote;
         renderFeedback();
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("fetchFeedback failed:", err);
         showFormMsg("Could not load live feedback from the Apps Script API.", "error");
       })
       .finally(() => refreshBtn.classList.remove("spinning"));
