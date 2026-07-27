@@ -43,7 +43,7 @@ const CONFIG = {
   //    See APPS_SCRIPT_SETUP.md for step-by-step deployment instructions.
   //    Paste the URL Google gives you after deployment below, e.g.:
   //    "https://script.google.com/macros/s/AKfycb.../exec"
-  APPS_SCRIPT_API_URL: "https://script.google.com/macros/s/AKfycbxewy27ZOKcl3bIhrV-3r86mcfaokJU4RXUlqPY4yTnyUJPx3FeO99G9XGCyJAG6ZpO-g/exec",
+  APPS_SCRIPT_API_URL: "https://script.google.com/macros/s/AKfycbwkc2yoSFEvazhm7PDwmKGyGD3pBJsqaLsyZ5ZDQfXl51xAOdxkCyL4BpOkvaDnxSKWWw/exec",
 
   // How often (ms) to auto-refresh the Recent Feedback list.
   AUTO_REFRESH_MS: 30000,
